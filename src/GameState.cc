@@ -12,10 +12,11 @@ GameState::GameState(){
 
 
 void GameState::init_game(int boardsize) {
-	m_winner = Board::INVAL;
 	board.reset_board(boardsize);
 	game_history.clear();
 	game_history.emplace_back(std::make_shared<Board>(board));
+	m_movenum = 0;
+	m_gameover = false;
 }
 
 
@@ -26,9 +27,23 @@ void GameState::display() const {
 	board.print_to_move();
 }
 
+bool GameState::undo_move() {
+	if (m_gameover) {m_gameover = false;}
+
+	assert(m_movenum == game_history.size()-1);
+	if (m_movenum == 0) {
+		return false;
+	}
+	
+	m_movenum--;
+	board = *game_history[m_movenum];
+	game_history.pop_back();
+
+	return true;
+}
 
 bool GameState::play_move(const int color, const int vtx){
-	
+	if (m_gameover) {return false;}
 	if (color != Board::WHITE && color != Board::BLACK) {
 		return false;
 	}
@@ -50,12 +65,15 @@ bool GameState::play_move(const int color, const int vtx){
 	board.set_to_move(color);
 	board.play_move(vtx);
 	game_history.emplace_back(std::make_shared<Board>(board));
+	m_movenum++;
+	assert(m_movenum == game_history.size()-1);
 
 	return true;
 }
 
-bool GameState::text_play_move(std::string &input){
 
+bool GameState::text_play_move(std::string &input){
+	if (m_gameover) {return false;}
 	std::stringstream txt_move_string(input);
 	auto cmd = std::string{};
 	auto cmd_count = size_t{0};
@@ -69,37 +87,37 @@ bool GameState::text_play_move(std::string &input){
 				color = Board::BLACK;
 			} else if (cmd == "w" || cmd == "white"){
 				color = Board::WHITE;
+			} else if (cmd == "pass" || cmd == "PASS") {
+				vtx = Board::PASS;
+				color = (Board::vertex_t)board.get_to_move();
+				break;
 			} else {
-				if (cmd == "pass") {
-					vtx = Board::PASS;
+				const auto cmd_size = cmd.size();
+				auto number_str = std::string{};
+				int x = -1;
+				int y = -1;
+				if (cmd[0] >= 97 && cmd[0] <= 122) {
+					x = (int)cmd[0] - 97;
+				} else if (cmd[0] >= 65 && cmd[0] <= 90) {
+					x = (int)cmd[0] - 65;
 				} else {
-					const auto cmd_size = cmd.size();
-					auto number_str = std::string{};
-					int x = -1;
-					int y = -1;
-					if (cmd[0] >= 97 && cmd[0] <= 122) {
-						x = (int)cmd[0] - 97;
-					} else if (cmd[0] >= 65 && cmd[0] <= 90) {
-						x = (int)cmd[0] - 65;
+					return false;			
+				}
+
+				for (int i = 1; i < cmd_size; ++i) {
+					if (cmd[i] >= 48 && cmd[i] <= 57) {
+						number_str += cmd[i];
 					} else {
 						return false;			
 					}
-
-					for (int i = 1; i < cmd_size; ++i) {
-						if (cmd[i] >= 48 && cmd[i] <= 57) {
-							number_str += cmd[i];
-						} else {
-							return false;			
-						}
-					}
-					y = std::stoi(number_str) - 1;
-					vtx = board.get_vertex(x, y);
-					color = (Board::vertex_t)board.get_to_move();
-					break;
-				}			
+				}
+				y = std::stoi(number_str) - 1;
+				vtx = board.get_vertex(x, y);
+				color = (Board::vertex_t)board.get_to_move();
+				break;			
 			}
 		} else if (cmd_count == 2) {
-			if (cmd == "pass") {
+			if (cmd == "pass" || cmd == "PASS") {
 				vtx = Board::PASS;
 			} else {
 				const auto cmd_size = cmd.size();
@@ -135,6 +153,28 @@ bool GameState::is_gameover() const {
 	return board.is_gameover();
 }
 
-int GameState::get_winner() const {
-	return board.get_winner();
+int GameState::get_winner(bool ret) {
+	if (m_gameover) {return m_winner;}
+	
+	const auto res = board.get_winner();
+	if (ret) {
+		if (!board.is_gameover()) {
+			return Board::INVAL;
+		} else {
+			m_gameover = true;
+			m_winner   = res;
+		}
+	}
+	return res;
 }
+
+void GameState::one_resign(const int resign_color) {
+	if (m_gameover) {return;}
+	m_gameover = true;
+	m_winner   = !(resign_color);
+}
+
+bool GameState::force_countine() {
+	m_gameover = false;
+}
+
