@@ -9,7 +9,7 @@
 class Text{
 public:
 	static void init_all();
-	static void text(std::string ,GameState & state, bool quite = false);
+	static void text(std::string &, GameState & state, bool quite = false);
 	static std::vector<std::string> first_cmd; 
 };
 

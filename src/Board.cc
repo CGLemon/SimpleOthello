@@ -280,7 +280,7 @@ void Board::print_row(const int count) const {
 void Board::text_display(const int mark) const{
 	if (!m_quiet) {
 		printf("   ");
-		for (char c = 97; c < 97 + m_boardsize; ++c) {printf("  %c ", c);}
+		for (char c = 65; c < 65 + m_boardsize; ++c) {printf("  %c ", c);}
 		printf("\n");
 		for (auto y = 0 ; y < BOARDSIZE ; ++y){
 			printf("   ");
@@ -308,7 +308,7 @@ void Board::text_display(const int mark) const{
 		printf("   ");
 		print_row(m_boardsize);
 		printf("   ");
-		for (char c = 97; c < 97 + m_boardsize; ++c) {printf("  %c ", c);}
+		for (char c = 65; c < 65 + m_boardsize; ++c) {printf("  %c ", c);}
 		printf("\n");
 		printf("\n");
 	}

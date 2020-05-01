@@ -53,7 +53,6 @@ void Evaluation::get_tablescore(const Board & board, Evaluation::Eval & eval,
 		for (int x = 0; x < boardsize; ++x) {
 			const auto vtx = board.get_vertex(x, y);
 			const auto idx = board.get_index(x, y);
-
 			if (board.get_state(vtx) == Board::BLACK) {
 				eval.blackscore += table[idx];
 			} else if (board.get_state(vtx) == Board::WHITE) {

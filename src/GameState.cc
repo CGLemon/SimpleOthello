@@ -174,7 +174,7 @@ void GameState::one_resign(const int resign_color) {
 	m_winner   = !(resign_color);
 }
 
-bool GameState::force_countine() {
+void GameState::force_countine() {
 	m_gameover = false;
 }
 

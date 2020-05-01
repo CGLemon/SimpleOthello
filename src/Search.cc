@@ -35,11 +35,14 @@ void Search::search(const Board & current_board, Node * node,
 	auto const current_color = current_board.get_to_move();
 
 	movelist.emplace_back(0);
-	node -> extend_children(current_board, root_color == Board::BLACK, root_color != current_color);
+	node -> expand_children(current_board, root_color == Board::BLACK, root_color != current_color);
 	const int child_size = node -> get_numchild();
 	bool cut = false;
 	for (int n = 0; n < child_size; ++n) {
 		if (deep+1 >= maxdeep) {
+			break;
+		}
+		if (!m_running) {
 			break;
 		}
 
@@ -94,28 +97,30 @@ int Search::get_best_move() {
 
 int Search::think() {
 	m_searchdeep = 0;
+	m_running = true;
 
 	if (!prepare_root()) {
 		return Board::NOVERTEX;
 	}
 	int edge_count = root_node -> get_edge_count();
 
-	m_TimeController.set_time(10.f);
+	m_TimeController.set_time(m_search_seconds);
 	m_TimeController.start_clock();
-	 
-	int alpha = std::numeric_limits<int>::min();
-	int beta = std::numeric_limits<int>::max();
+
 	MoveList movelist = {};
-	int maxdeep = m_maxdeep;
+	int maxdeep = movelist.size() + m_maxdeep;
 	
 	
-	while (!m_TimeController.stop_search()) {
-		
+	while (m_running) {
+
+		m_running = !m_TimeController.stop_search();
+
 		printf("Searching to depth : %d.... ", maxdeep);
 		auto deeper_board = std::make_shared<Board>(root_state.board);
 		auto node = root_node -> get_node();
-		search(*deeper_board, node, movelist, maxdeep, alpha, beta);
+		search(*deeper_board, node, movelist, maxdeep);
 		printf("Search complete!\n");
+
 		const int vtx = get_best_move();
 		const auto search_edge_count =  root_node -> get_edge_count();
 		if (search_edge_count == edge_count) {
@@ -125,7 +130,7 @@ int Search::think() {
 			edge_count = search_edge_count;
 		}
 
-		if (node -> get_eval_value() > 1000  || node -> get_eval_value() < -1000) {
+		if (node -> get_eval_value() > 9999  || node -> get_eval_value() < -9999) {
 			printf("Find ending way !\n");
 			break;
 		}
@@ -138,12 +143,15 @@ int Search::think() {
 	print_node_count(false);
 	const int best_move = get_best_move();
 	printf("using time : %f seconds\n", m_TimeController.get_during());
+	printf("computer move = ");
+	parser_vertex(best_move, false);
+	printf("\n");	
+
 	return best_move;
 }
 
 void Search::print_move_eval(bool quiet) const {
 	const int root_child_size = root_node -> get_numchild();	
-	const int boardsize = root_state.board.get_boardsize();
 	for (int n = 0; n < root_child_size; ++n) {
 		const auto vtx = root_node -> get_child_vertex(n);
 		if (root_node -> is_child_pruning(vtx)) {
@@ -153,11 +161,9 @@ void Search::print_move_eval(bool quiet) const {
 		const auto color = root_state.board.get_to_move();
 		int val = child -> get_eval_value();
 
-		const int x = vtx % (boardsize+1);
-		const int y = vtx / (boardsize+1);
-		auto y_str = std::to_string(y);
+		parser_vertex(vtx, quiet);
 		if (!quiet) {
-			printf("%c%s : %d scores \n", (x+64), y_str.c_str(), val);
+			printf(" : %d scores \n", val);
 		}
 	}
 }
@@ -171,4 +177,34 @@ void Search::print_node_count(bool quiet) const {
 
 void Search::clear() {
 	root_node -> clear_count();
+}
+
+void Search::set_time(const int seconds) {
+	if (seconds <= 0) {
+		return;
+	}
+	m_search_seconds = seconds;
+}
+
+void Search::set_maxdeep(const int maxdeep) {
+	if (maxdeep <= 0) {
+		return;
+	}
+	m_maxdeep = maxdeep;
+}
+
+
+void Search::parser_vertex(const int vtx, bool quiet) const {
+	if (vtx == Board::NOVERTEX) {
+		printf("PASS");
+		return;
+	}
+
+	const int boardsize = root_state.board.get_boardsize();
+	const int x = vtx % (boardsize+1);
+	const int y = vtx / (boardsize+1);
+	auto y_str = std::to_string(y);
+	if (!quiet) {
+		printf("%c%s", (x+64), y_str.c_str());
+	}
 }

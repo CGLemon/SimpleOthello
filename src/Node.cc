@@ -7,7 +7,7 @@
 #include <iterator>
 #include <numeric>
 
-constexpr std::uint64_t Edge::INVAL;
+constexpr std::uint64_t Edge::INVALID;
 constexpr std::uint64_t Edge::UNINFLATED;
 constexpr std::uint64_t Edge::POINTER;
 
@@ -15,6 +15,12 @@ Edge::Edge(const int vertex, const int value) {
 	m_pointer = UNINFLATED;
 	m_vertex  = vertex;
 	m_node_value = value;
+}
+
+Edge::Edge(Edge&& n) {
+    auto nv = std::atomic_exchange(&n.m_pointer, INVALID);
+    auto v = std::atomic_exchange(&m_pointer, nv);
+    assert(v == INVALID);
 }
 
 void Edge::increment() const {
@@ -30,29 +36,29 @@ void Edge::inflate() {
 		auto v = new Node(m_vertex, m_node_value);
 		m_pointer = reinterpret_cast<std::uint64_t>(v) | POINTER;
 		decrement();
-		read_ptr(m_pointer) -> increment();
+		read_ptr(m_pointer.load()) -> increment();
 	}
 }
 
 bool Edge::is_inval() const {
-	return (m_pointer & 3ULL) == INVAL;
+	return (m_pointer.load() & 3ULL) == INVALID;
 }
 
 bool Edge::is_uninflate() const {
-	return (m_pointer & 3ULL) == UNINFLATED;
+	return (m_pointer.load() & 3ULL) == UNINFLATED;
 }
 
 bool Edge::is_pointer() const {
-	return (m_pointer & 3ULL) == POINTER;
+	return (m_pointer.load() & 3ULL) == POINTER;
 }
 
 void Edge::set_inval() {
-	m_pointer |= INVAL;
+	m_pointer |= INVALID;
 }
 
 Node * Edge::get_node() const {
 	if (is_pointer()) { 
-		return read_ptr(m_pointer);
+		return read_ptr(m_pointer.load());
 	} else {
 		return nullptr;
 	}
@@ -68,7 +74,7 @@ int Edge::get_node_value() const {
 
 int Edge::get_eval_value() const {
 	if (is_pointer()) {
-		return read_ptr(m_pointer) -> get_eval_value();
+		return read_ptr(m_pointer.load()) -> get_eval_value();
 	} else {
 		return m_node_value;
 	}
@@ -90,11 +96,13 @@ Node::Node(const int vertex, const int value) {
 	m_eval_value = value;
 }
 
-void Node::extend_children(const Board & board, bool is_black, bool reverse) {
-	if (status == EXPANDING || status == EXPANDED) {
+void Node::expand_children(const Board & board, bool is_black, bool reverse) {
+	if (m_expand_state != ExpandState::INITIAL) {
 		return;
 	}
-	status = EXPANDING;
+	if (!acquire_expanding()) {
+		return;
+	}
 
 	const int boardsize = board.get_boardsize();
 	const auto color = board.get_to_move(); 
@@ -129,7 +137,7 @@ void Node::extend_children(const Board & board, bool is_black, bool reverse) {
 		}
 	}
 	link_noodlist(node_list, reverse);
-	status = EXPANDED;
+	expand_done();
 }
 
 
@@ -140,7 +148,8 @@ void Node::link_noodlist(std::vector<std::pair<int, int>> & node_list, bool reve
 	}
 	std::stable_sort(rbegin(node_list), rend(node_list));
 	const auto size = node_list.size();
-	//int first_value;
+	m_children.reserve(size);
+
 	for (auto n = 0; n < size; ++n) {
 		int id;
 		if (reverse) {
@@ -148,22 +157,9 @@ void Node::link_noodlist(std::vector<std::pair<int, int>> & node_list, bool reve
 		} else {
 			id = n;
 		}
-		const int value = node_list[id].second;
-		//if (n == 0) {
-		//	first_value = value;
-		//}
-		//if (first_value > value) {
-		//	if (first_value - value > 200) {
-		//		continue;
-		//	}
-		//} else {
-		//	if (first_value - value < -200) {
-		//		continue;
-		//	}
-		//} 
 
 		m_numchilden++;
-		m_children.emplace_back(value, node_list[id].first);
+		m_children.emplace_back(node_list[id].second, node_list[id].first);
 		m_children[m_numchilden-1].increment();
 	}
 	m_children.reserve(m_numchilden);
@@ -206,7 +202,7 @@ int Node::get_eval_value() const {
 }
 
 void Node::update_eval_value(bool max) {
-	if (status != EXPANDED) {
+	if (!is_expanded()) {
 		return;
 	}
 
@@ -266,6 +262,7 @@ bool Node::has_child() const {
 
 int Node::get_best_move(bool max) const {
 
+	//wait_expanded();
 	int vtx = Board::NOVERTEX;
 	if (max) {
 		int max_val = std::numeric_limits<int>::min();
@@ -290,11 +287,11 @@ int Node::get_best_move(bool max) const {
 }
 
 std::pair<int, int> Node::get_node_count() const {
-	return {tree::node_count, tree::edge_count};
+	return {tree::node_count.load(), tree::edge_count.load()};
 }
 
 int Node::get_edge_count() const {
-	return tree::total_edge_count;
+	return tree::total_edge_count.load();
 }
 
 void Node::clear_count() {
@@ -316,4 +313,26 @@ void Node::decrement() const {
 }
 
 
+bool Node::acquire_expanding() {
+    auto initial	 = ExpandState::INITIAL;
+    auto expecting   = ExpandState::EXPANDING;
+    return m_expand_state.compare_exchange_strong(initial, expecting);
+}
 
+void Node::expand_done() {
+    auto v = m_expand_state.exchange(ExpandState::EXPANDED);
+    assert(v == ExpandState::EXPANDING);
+}
+void Node::expand_cancel() {
+    auto v = m_expand_state.exchange(ExpandState::INITIAL);
+    assert(v == ExpandState::EXPANDING);
+}
+void Node::wait_expanded() {
+    while (m_expand_state.load() == ExpandState::EXPANDING) {}
+    auto v = m_expand_state.load();
+    assert(v == ExpandState::EXPANDED);
+}
+
+bool Node::is_expanded() const {
+	return m_expand_state.load() == ExpandState::EXPANDED;
+}
