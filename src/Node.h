@@ -9,12 +9,6 @@
 #include "Evaluation.h"
 
 class Node;
-namespace tree {
-	static std::atomic<size_t> total_edge_count{0};
-	static std::atomic<size_t> edge_count{0};
-	static std::atomic<size_t> node_count{0};
-}
-
 
 
 class Edge {
@@ -23,10 +17,14 @@ public:
 	static constexpr std::uint64_t POINTER 	  = 0x2;
 	static constexpr std::uint64_t INVALID    = 0x3;
 
+
+	static std::atomic<size_t> total_edge_count;
+	static std::atomic<size_t> edge_count;
+
 	Edge(const int vertex, const int value);
 
 	void set_inval();
-	void inflate();
+	void inflate(Node *);
 	Node * read_ptr(std::uint64_t v) const;
 	
 	bool is_inval() const;
@@ -45,10 +43,9 @@ public:
     Edge(Edge&& n);
 private:
 	mutable std::atomic<std::uint64_t> m_pointer;
-	//std::uint64_t m_pointer;
 	int m_vertex;
 	int m_node_value;
-	
+
 };
 
 
@@ -66,8 +63,10 @@ public:
 		EXPANDED  = 2
 	};
 
-	Node(const int vertex, const int value);
-	Node(Board & board);
+	static std::atomic<size_t> node_count;
+
+	Node(const int vertex, const int value, Node * parent = nullptr);
+	Node(Board & board, Node * parent = nullptr);
 	Node() = delete;
 	Node(const Node&) = delete;
     ~Node() = default;
@@ -90,7 +89,7 @@ public:
 	int get_best_move(bool max) const;
 
 	Node * get_child(const int vtx) const;
-	void clear_count();
+	static void clear_count();
 	std::pair<int, int> get_node_count() const;
 	int get_edge_count() const;
 
@@ -104,6 +103,8 @@ public:
 	void expand_cancel();
 	void wait_expanded();
 	bool is_expanded() const;
+	
+	Node * get_parent() const;
 
 private:
 	std::vector<Edge> m_children;
@@ -114,7 +115,8 @@ private:
 	int m_eval_value;
 
 	int m_numchilden{0};	
-
+	
+	Node * m_parentnode;
 	std::atomic<ExpandState> m_expand_state{ExpandState::INITIAL};
 };
 

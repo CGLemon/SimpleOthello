@@ -11,6 +11,12 @@ constexpr std::uint64_t Edge::INVALID;
 constexpr std::uint64_t Edge::UNINFLATED;
 constexpr std::uint64_t Edge::POINTER;
 
+
+std::atomic<size_t> Edge::total_edge_count{0};
+std::atomic<size_t> Edge::edge_count{0};
+std::atomic<size_t> Node::node_count{0};
+
+
 Edge::Edge(const int vertex, const int value) {
 	m_pointer = UNINFLATED;
 	m_vertex  = vertex;
@@ -24,19 +30,31 @@ Edge::Edge(Edge&& n) {
 }
 
 void Edge::increment() const {
-	tree::edge_count++;
-	tree::total_edge_count++;
+	edge_count++;
+	total_edge_count++;
 }
 void Edge::decrement() const {
-	tree::edge_count--;
+	edge_count--;
 }
 
-void Edge::inflate() {
-	if (is_uninflate()) {
-		auto v = new Node(m_vertex, m_node_value);
-		m_pointer = reinterpret_cast<std::uint64_t>(v) | POINTER;
-		decrement();
-		read_ptr(m_pointer.load()) -> increment();
+void Edge::inflate(Node * parent) {
+	while (true) {
+		if (!is_uninflate()) {
+			return;
+		}
+		auto v1 = m_pointer.load();
+		auto v2 = reinterpret_cast<std::uint64_t> (
+					new Node(m_vertex, m_node_value, parent)) | POINTER;
+		
+
+		bool success = m_pointer.compare_exchange_strong(v1, v2);
+		if (success) {
+			decrement();
+			read_ptr(m_pointer.load()) -> increment();
+	        return;
+	    } else {
+	        delete read_ptr(v2);
+	    }
 	}
 }
 
@@ -80,7 +98,7 @@ int Edge::get_eval_value() const {
 	}
 }
 
-Node::Node(Board & board) {
+Node::Node(Board & board, Node * parent) {
 	if (!board.is_gameover()) {
 		const auto color = board.get_to_move(); 
 		const auto eval = Evaluation::get_score(board);
@@ -88,12 +106,14 @@ Node::Node(Board & board) {
 		m_node_value = node_value;
 		m_eval_value = node_value;
 	}
+	m_parentnode = parent;
 }
 
-Node::Node(const int vertex, const int value) {
+Node::Node(const int vertex, const int value, Node * parent) {
 	m_vertex 	 = vertex;
 	m_node_value = value;
 	m_eval_value = value;
+	m_parentnode = parent;
 }
 
 void Node::expand_children(const Board & board, bool is_black, bool reverse) {
@@ -123,7 +143,7 @@ void Node::expand_children(const Board & board, bool is_black, bool reverse) {
 				}
 			}
 		}
-	} 
+	}
 	if (node_list.empty()) {
 		if (!board.is_gameover()) {
 			const auto eval = Evaluation::get_score(board);
@@ -167,13 +187,13 @@ void Node::link_noodlist(std::vector<std::pair<int, int>> & node_list, bool reve
 
 void Node::inflate_allchildren() {
 	for (auto &child : m_children) {
-		child.inflate();
+		child.inflate(this);
 	}
 }
 void Node::inflate_children(const int vtx) {
 	for (auto &child : m_children) {
 		if (child.get_vertex() == vtx) {
-			child.inflate();
+			child.inflate(this);
 			return;
 		}
 	}
@@ -287,29 +307,33 @@ int Node::get_best_move(bool max) const {
 }
 
 std::pair<int, int> Node::get_node_count() const {
-	return {tree::node_count.load(), tree::edge_count.load()};
+	return {node_count.load(), Edge::edge_count.load()};
 }
 
 int Node::get_edge_count() const {
-	return tree::total_edge_count.load();
+	return Edge::total_edge_count.load();
 }
 
 void Node::clear_count() {
-	tree::edge_count = 0;
-	tree::node_count = 0;
-	tree::total_edge_count = 0;
+	Edge::edge_count = 0;
+	node_count = 0;
+	Edge::total_edge_count = 0;
 }
 
 Node * Node::get_node() {
 	return this;
 }
 
+Node * Node::get_parent() const {
+	return m_parentnode;
+}
+
 void Node::increment() const {
-	tree::node_count++;
+	node_count++;
 }
 
 void Node::decrement() const {
-	tree::node_count--;
+	node_count--;
 }
 
 

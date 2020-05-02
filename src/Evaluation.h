@@ -21,6 +21,7 @@ public:
 private:
 	static CacheTable m_cache;
 	static const std::array<int, INTERSECTION> m_evaltable;
+	//static const std::array<int, INTERSECTION> m_evalstabletable;
 	static constexpr int winner_value = 9999;
 	static constexpr int loser_value = -9999;
 	static constexpr int draw_value = 0;

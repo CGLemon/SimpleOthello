@@ -4,6 +4,7 @@
 #include "Search.h"
 #include "Board.h"
 #include "config.h"
+#include "Node.h"
 
 #include <string>
 #include <sstream>
@@ -26,6 +27,8 @@ std::vector<std::string> Text::first_cmd =
 
 void Text::init_all() {
 	Zobrist::init_zobrist();
+	Node::clear_count();
+
 }
 
 
@@ -149,7 +152,7 @@ void Text::text(std::string & input, GameState & state, bool quite){
 		}
 		search -> set_time(seconds);
 
-	} else if (cmd == "setdeep") {
+	} else if (cmd == "setdepth") {
 
 		auto search_deep_str = std::string{};
 		int search_deep; 
@@ -170,7 +173,7 @@ void Text::text(std::string & input, GameState & state, bool quite){
 			}
 			return;
 		}	
-		search -> set_maxdeep(search_deep);
+		search -> set_maxdepth(search_deep);
 
 	} else {
 		if(!quite){
