@@ -5,6 +5,8 @@
 #include <cassert>
 #include <iostream>
 #include <vector>
+#include <queue>
+
 std::array<int,8> Board::m_dirs;
 constexpr int Board::NUM_SYMMETRIES;
 constexpr int Board::IDENTITY_SYMMETRY;
@@ -58,10 +60,10 @@ void Board::reset_board(int boardsize){
 	m_white_stones = 0; 
 	m_quiet = false;
 
-	m_dirs[0] = -m_eboardsize	;m_dirs[4] = -m_eboardsize-1;
-	m_dirs[1] = -1				;m_dirs[5] = -m_eboardsize+1;
-	m_dirs[2] =  1				;m_dirs[6] =  m_eboardsize-1;
-	m_dirs[3] =  m_eboardsize	;m_dirs[7] =  m_eboardsize+1;
+	m_dirs[0] = -1				;m_dirs[4] = -m_eboardsize-1;
+	m_dirs[1] =  1				;m_dirs[5] =  m_eboardsize+1;
+	m_dirs[2] = -m_eboardsize	;m_dirs[6] =  m_eboardsize-1;
+	m_dirs[3] =  m_eboardsize	;m_dirs[7] = -m_eboardsize+1;
 
 
 	for (auto i = 0 ; i < NUMVERTICS ; ++i){
@@ -162,14 +164,9 @@ bool Board::is_gameover() const {
 	return true;
 }
 
-bool Board::is_stable(const int vtx) const{
-	assert(m_state[vtx] != INVAL);
-	if(m_state[vtx] != EMPTY){	
-		for(auto k = 0; k < 8; ++k){
-			;
-		}
-	}
-	return false;
+
+void Board::update_stable(const int vtx) {
+	
 }
 
 
@@ -206,7 +203,8 @@ bool Board::exsit_moves(const int color) const{
 void Board::reseve(const int color, const int vtx){
 
 	const int opp_color = !color;
-	
+	std::vector<int> update_vtx;
+
 	for(auto k = 0; k < 8; ++k){
 		int avtx = vtx;
 		int res = 0;
@@ -220,6 +218,7 @@ void Board::reseve(const int color, const int vtx){
 			for (int i = 0 ; i < (res-1); ++i){
 				avtx -= m_dirs[k];
 				update_state(color, avtx);
+				update_vtx.emplace_back(avtx);
 			}
 		}
 	}
@@ -371,3 +370,22 @@ int Board::get_boardsize() const {
 	return m_boardsize;
 }
 
+bool Board::get_stable(const int vtx) const {
+	//return m_stable[vtx];
+	return false;
+}
+
+int Board::get_numlegalmove(const int color) const {
+	int num = 0;
+	for (auto y = 0 ; y < m_boardsize ; ++y){
+		for (auto x = 0; x < m_boardsize ; ++x){
+			const int vtx = get_vertex(x, y);
+			if (m_state[vtx] == EMPTY) {
+				if (is_legal(color, vtx)) {
+					num++;
+				}
+			}
+		}
+	}
+	return num;
+}

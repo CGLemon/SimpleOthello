@@ -37,9 +37,9 @@ public:
 	void set_to_move(const int);
 	void exchange_to_move();
 	void update_state(const int color, const int vtx);
+	void update_stable(const int vtx);
 
 	bool is_gameover() const;
-	bool is_stable(const int vtx) const;
 	bool is_legal(const int color, const int vtx) const;
 	bool exsit_moves(const int color) const;	
 	void reseve(const int color, const int vtx);
@@ -63,7 +63,10 @@ public:
 	int get_winner() const;
 	int get_state(const int x, const int y) const;
 	int get_state(const int vtx) const;
+	bool get_stable(const int vtx) const;
 	int get_boardsize() const;
+	int get_numlegalmove(const int color) const;
+
 private :
 	int m_quiet;
 	int m_tomove;
@@ -71,7 +74,7 @@ private :
 	std::uint64_t m_hash;
 
 	std::array<vertex_t ,NUMVERTICS> m_state;
-	std::array<vertex_t ,NUMVERTICS> m_stable;
+	//std::array<bool ,NUMVERTICS> m_stable;
 
 	int m_boardsize;
 	int m_numvertics;
@@ -117,4 +120,5 @@ inline int Board::get_state(const int x, const int y) const {
 inline int Board::get_state(const int vtx) const {
 	return m_state[vtx];
 }
+
 #endif

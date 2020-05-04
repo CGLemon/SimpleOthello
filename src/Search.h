@@ -19,7 +19,7 @@ public:
 	bool prepare_root();
 	int think();
 	void search(const Board & current_board, Node * node, 
-					MoveList movelist, int maxdeep,
+					MoveList movelist, int maxdepth,
 					int alpha = std::numeric_limits<int>::min(),
 					int beta  = std::numeric_limits<int>::max()); 
 
@@ -30,12 +30,14 @@ public:
 	void parser_vertex(const int vtx, bool quiet) const;
 
 	void set_time(int seconds);
-	void set_maxdeep(int maxdeep);
+	void set_maxdepth(int maxdepth);
+	void set_basicdepth(int basicdepth);
 private:
 	GameState & root_state;
 	std::unique_ptr<Node> root_node;
-	int m_maxdeep{4};
-	int m_searchdeep;
+	int m_maxdepth{99};
+	int m_basicdepth{8};
+	int m_searchdepth;
 	int m_search_seconds{5};
 	bool m_running;
 	Timer m_TimeController;

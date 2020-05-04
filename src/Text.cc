@@ -149,7 +149,7 @@ void Text::text(std::string & input, GameState & state, bool quite){
 		}
 		search -> set_time(seconds);
 
-	} else if (cmd == "setdeep") {
+	} else if (cmd == "setdepth") {
 
 		auto search_deep_str = std::string{};
 		int search_deep; 
@@ -170,9 +170,30 @@ void Text::text(std::string & input, GameState & state, bool quite){
 			}
 			return;
 		}	
-		search -> set_maxdeep(search_deep);
+		search -> set_maxdepth(search_deep);
 
-	} else {
+	} else if (cmd == "setbasicdepth") {
+  		auto search_deep_str = std::string{};
+		int search_deep; 
+		if (txt_input >> cmd) {
+			const int cmd_size = cmd.size();
+			for (int i = 0; i < cmd_size; ++i) {
+				if (cmd[i] >= 48 && cmd[i] <= 57) {
+					search_deep_str += cmd[i];
+				} else {
+					return;			
+				}
+			}
+			search_deep = std::stoi(search_deep_str);
+		}
+		if (txt_input >> cmd) {
+			if(!quite){
+				printf("Unknown command! \n");		
+			}
+			return;
+		}	
+		search -> set_basicdepth(search_deep);
+	} else  {
 		if(!quite){
 			printf("Unknown command! \n");		
 		}

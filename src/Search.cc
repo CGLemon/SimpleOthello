@@ -18,17 +18,17 @@ bool Search::prepare_root() {
 }
 
 void Search::search(const Board & current_board, Node * node, 
-						Search::MoveList movelist, int maxdeep, int alpha, int beta) {
+						Search::MoveList movelist, int maxdepth, int alpha, int beta) {
 
 	if (current_board.is_gameover()) {
 		return;
 	}
 	
-	const int deep = movelist.size();
-	if (deep+1 > m_searchdeep) {
-		m_searchdeep = deep+1;
+	const int depth = movelist.size();
+	if (depth+1 > m_searchdepth) {
+		m_searchdepth = depth+1;
 	}
-	if (deep >= maxdeep) {
+	if (depth >= maxdepth) {
 		return;
 	}
 	auto const root_color = root_state.board.get_to_move();
@@ -39,7 +39,7 @@ void Search::search(const Board & current_board, Node * node,
 	const int child_size = node -> get_numchild();
 	bool cut = false;
 	for (int n = 0; n < child_size; ++n) {
-		if (deep+1 >= maxdeep) {
+		if (depth+1 >= maxdepth) {
 			break;
 		}
 		if (!m_running) {
@@ -65,8 +65,8 @@ void Search::search(const Board & current_board, Node * node,
 		auto deeper_board = std::make_shared<Board>(current_board);
 		deeper_board -> play_move(current_color, vtx);
 		deeper_board -> exchange_to_move();
-		movelist[deep] = n;
-		search(*deeper_board, child, movelist, maxdeep, alpha, beta);
+		movelist[depth] = n;
+		search(*deeper_board, child, movelist, maxdepth, alpha, beta);
 
 		const int temp_eval = child -> get_eval_value();
 		if (current_color == root_color) {   // max node
@@ -96,7 +96,7 @@ int Search::get_best_move() {
 }
 
 int Search::think() {
-	m_searchdeep = 0;
+	m_searchdepth = 0;
 	m_running = true;
 
 	if (!prepare_root()) {
@@ -108,23 +108,28 @@ int Search::think() {
 	m_TimeController.start_clock();
 
 	MoveList movelist = {};
-	int maxdeep = movelist.size() + m_maxdeep;
+	int maxdepth = movelist.size() + m_basicdepth;
 	
 	
 	while (m_running) {
 
-		m_running = !m_TimeController.stop_search();
+		if (!m_TimeController.stop_search()) {
+			printf("Timeout\n");
+			m_running = false;
+			break;
+		}
 
-		printf("Searching to depth : %d.... ", maxdeep);
+		printf("Searching to depth : %d.... ", maxdepth);
 		auto deeper_board = std::make_shared<Board>(root_state.board);
 		auto node = root_node -> get_node();
-		search(*deeper_board, node, movelist, maxdeep);
+		search(*deeper_board, node, movelist, maxdepth);
 		printf("Search complete!\n");
 
 		const int vtx = get_best_move();
 		const auto search_edge_count =  root_node -> get_edge_count();
 		if (search_edge_count == edge_count) {
 			printf("All node is expended!\n");
+			m_running = false;
 			break;
 		} else {
 			edge_count = search_edge_count;
@@ -132,10 +137,19 @@ int Search::think() {
 
 		if (node -> get_eval_value() > 9999  || node -> get_eval_value() < -9999) {
 			printf("Find ending way !\n");
+			m_running = false;
 			break;
 		}
-		maxdeep+=1;
+		maxdepth = m_searchdepth+1;
+		if (m_maxdepth < maxdepth) {
+			printf("stop !\n");
+			m_running = false;
+			break;
+		}
 	}
+	
+	root_node -> inflate_allchildren();
+
 	auto const root_color = root_state.board.get_to_move();
 	root_node -> update_eval_value(true);
 
@@ -186,13 +200,19 @@ void Search::set_time(const int seconds) {
 	m_search_seconds = seconds;
 }
 
-void Search::set_maxdeep(const int maxdeep) {
-	if (maxdeep <= 0) {
+void Search::set_maxdepth(const int maxdepth) {
+	if (maxdepth <= 0) {
 		return;
 	}
-	m_maxdeep = maxdeep;
+	m_maxdepth = maxdepth;
 }
 
+void Search::set_basicdepth(const int basicdepth) {
+	if (basicdepth <= 0) {
+		return;
+	}
+	m_basicdepth = basicdepth;
+}
 
 void Search::parser_vertex(const int vtx, bool quiet) const {
 	if (vtx == Board::NOVERTEX) {

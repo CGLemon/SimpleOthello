@@ -17,11 +17,11 @@ constexpr int Evaluation::draw_value;
 const std::array<int, INTERSECTION> Evaluation::m_evaltable = {
 	120, -20,   20,  5,     5,  20, -20, 120,
 	-20, -40,  -5,  -5,    -5,  -5, -40, -20,
-	 20,  -5,  15,   3,     3,  15,  -5,  20,
-	  5,  -5,   3,   0,     0,   4 , -5,   5,
+	 20,  -5,  15,   4,     4,  15,  -5,  20,
+	  5,  -5,   4,   3,     3,   4 , -5,   5,
 
-	  5,  -5,   3,   0,     0,   4 , -5,   5,
-	 20,  -5,  15,   3,     3,  15,  -5,  20,
+	  5,  -5,   4,   3,     3,   4 , -5,   5,
+	 20,  -5,  15,   4,     4,  15,  -5,  20,
 	-20, -40,  -5,  -5,    -5,  -5, -40, -20,
 	120, -20,   20,  5,     5,  20, -20, 120
 };
@@ -38,7 +38,7 @@ const std::array<int, INTERSECTION> Evaluation::m_evaltable = {
 	120, -20,  20,    20, -20, 120
 };
 */
-
+constexpr int Evaluation::onelegalvale;
 
 
 void Evaluation::get_tablescore(const Board & board, Evaluation::Eval & eval,
@@ -47,6 +47,7 @@ void Evaluation::get_tablescore(const Board & board, Evaluation::Eval & eval,
 	eval.blackscore = 0;
 	eval.whitescore = 0;
 	int boardsize = board.get_boardsize();
+	const int color = board.get_to_move(); 
 	assert(board.get_boardsize() == 8);
 
 	for (int y = 0; y < boardsize; ++y) {
@@ -59,6 +60,11 @@ void Evaluation::get_tablescore(const Board & board, Evaluation::Eval & eval,
 				eval.whitescore += table[idx];
 			}
 		}
+	}
+	if (color == Board::BLACK) {
+		eval.blackscore += onelegalvale * board.get_numlegalmove(color);
+	} else {
+		eval.whitescore += onelegalvale * board.get_numlegalmove(color);
 	}
 }
 
@@ -73,7 +79,7 @@ Evaluation::Eval Evaluation::get_score(const Board & board) {
 	}
 
 	if (board.is_gameover()) {
-		auto winner = board.get_winner();
+		const auto winner = board.get_winner();
 		if (winner == Board::BLACK) {
 			eval.blackscore = winner_value;
 			eval.whitescore = loser_value;

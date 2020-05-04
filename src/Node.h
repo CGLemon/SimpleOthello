@@ -26,7 +26,7 @@ public:
 	Edge(const int vertex, const int value);
 
 	void set_inval();
-	void inflate();
+	void inflate(Node *);
 	Node * read_ptr(std::uint64_t v) const;
 	
 	bool is_inval() const;
@@ -45,10 +45,9 @@ public:
     Edge(Edge&& n);
 private:
 	mutable std::atomic<std::uint64_t> m_pointer;
-	//std::uint64_t m_pointer;
 	int m_vertex;
 	int m_node_value;
-	
+
 };
 
 
@@ -66,8 +65,8 @@ public:
 		EXPANDED  = 2
 	};
 
-	Node(const int vertex, const int value);
-	Node(Board & board);
+	Node(const int vertex, const int value, Node * parent = nullptr);
+	Node(Board & board, Node * parent = nullptr);
 	Node() = delete;
 	Node(const Node&) = delete;
     ~Node() = default;
@@ -104,6 +103,8 @@ public:
 	void expand_cancel();
 	void wait_expanded();
 	bool is_expanded() const;
+	
+	Node * get_parent() const;
 
 private:
 	std::vector<Edge> m_children;
@@ -114,7 +115,8 @@ private:
 	int m_eval_value;
 
 	int m_numchilden{0};	
-
+	
+	Node * m_parentnode;
 	std::atomic<ExpandState> m_expand_state{ExpandState::INITIAL};
 };
 

@@ -40,21 +40,34 @@ void VSComputerLoop() {
 
 	Text::init_all();
 	auto maingame = std::make_unique<GameState>();
-
-	maingame -> display();
-	auto color_str = std::string{};
 	int human_color;
-
-	std::cout << "Enter your color..." <<std::endl;
-	std::cin >> color_str;
-	if (color_str == "black" || color_str == "b") {
-		human_color= Board::BLACK;
-	} else if (color_str == "white" || color_str == "w") {
-		human_color = Board::WHITE;
-	} else {
-		return;
+	maingame -> display();
+	for(;;){
+		auto color_str = std::string{};
+		std::cout << "Enter your color...(black/white)" <<std::endl;
+		std::getline(std::cin, color_str);
+		if (color_str == "black" || color_str == "b") {
+			human_color= Board::BLACK;
+			break;
+		} else if (color_str == "white" || color_str == "w") {
+			human_color = Board::WHITE;
+			break;
+		} else if (color_str == "quit" || color_str == "q"){
+			Text::text(color_str, *maingame);
+		}
+	}
+	for(;;){
+		std::cout<<"Setting input (Enter finish to quit): "<<std::endl;
+		auto input = std::string{};
+		if (std::getline(std::cin, input)) {
+			if (input == "finish" || input == "f") {
+				break;
+			}
+			Text::text(input, *maingame);
+		}
 	}
 
+	maingame -> display();
 	for(;;){
 		std::cout<<"Input : "<<std::endl;
 		auto input = std::string{};
@@ -67,6 +80,7 @@ void VSComputerLoop() {
 		} else {
 			input = "genmove";
 			Text::text(input, *maingame);
+			maingame -> display();
 		}
 
 		if (maingame -> is_gameover()) {

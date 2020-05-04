@@ -31,12 +31,24 @@ void Edge::decrement() const {
 	tree::edge_count--;
 }
 
-void Edge::inflate() {
-	if (is_uninflate()) {
-		auto v = new Node(m_vertex, m_node_value);
-		m_pointer = reinterpret_cast<std::uint64_t>(v) | POINTER;
-		decrement();
-		read_ptr(m_pointer.load()) -> increment();
+void Edge::inflate(Node * parent) {
+	while (true) {
+		if (!is_uninflate()) {
+			return;
+		}
+		auto v1 = m_pointer.load();
+		auto v2 = reinterpret_cast<std::uint64_t> (
+					new Node(m_vertex, m_node_value, parent)) | POINTER;
+		
+
+		bool success = m_pointer.compare_exchange_strong(v1, v2);
+		if (success) {
+			decrement();
+			read_ptr(m_pointer.load()) -> increment();
+	        return;
+	    } else {
+	        delete read_ptr(v2);
+	    }
 	}
 }
 
@@ -80,7 +92,7 @@ int Edge::get_eval_value() const {
 	}
 }
 
-Node::Node(Board & board) {
+Node::Node(Board & board, Node * parent) {
 	if (!board.is_gameover()) {
 		const auto color = board.get_to_move(); 
 		const auto eval = Evaluation::get_score(board);
@@ -88,12 +100,14 @@ Node::Node(Board & board) {
 		m_node_value = node_value;
 		m_eval_value = node_value;
 	}
+	m_parentnode = parent;
 }
 
-Node::Node(const int vertex, const int value) {
+Node::Node(const int vertex, const int value, Node * parent) {
 	m_vertex 	 = vertex;
 	m_node_value = value;
 	m_eval_value = value;
+	m_parentnode = parent;
 }
 
 void Node::expand_children(const Board & board, bool is_black, bool reverse) {
@@ -113,6 +127,7 @@ void Node::expand_children(const Board & board, bool is_black, bool reverse) {
 			if (board.is_legal(color, vtx)) {
 				auto smi_board = std::make_shared<Board>(board);
 				smi_board -> play_move(color, vtx);
+				smi_board -> exchange_to_move();
 				const auto eval = Evaluation::get_score(*smi_board);
 				if (is_black) {
 					const int node_value = eval.blackscore - eval.whitescore;
@@ -123,7 +138,7 @@ void Node::expand_children(const Board & board, bool is_black, bool reverse) {
 				}
 			}
 		}
-	} 
+	}
 	if (node_list.empty()) {
 		if (!board.is_gameover()) {
 			const auto eval = Evaluation::get_score(board);
@@ -167,13 +182,13 @@ void Node::link_noodlist(std::vector<std::pair<int, int>> & node_list, bool reve
 
 void Node::inflate_allchildren() {
 	for (auto &child : m_children) {
-		child.inflate();
+		child.inflate(this);
 	}
 }
 void Node::inflate_children(const int vtx) {
 	for (auto &child : m_children) {
 		if (child.get_vertex() == vtx) {
-			child.inflate();
+			child.inflate(this);
 			return;
 		}
 	}
@@ -302,6 +317,10 @@ void Node::clear_count() {
 
 Node * Node::get_node() {
 	return this;
+}
+
+Node * Node::get_parent() const {
+	return m_parentnode;
 }
 
 void Node::increment() const {
