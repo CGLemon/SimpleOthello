@@ -113,7 +113,7 @@ int Search::think() {
 	
 	while (m_running) {
 
-		if (!m_TimeController.stop_search()) {
+		if (m_TimeController.stop_search()) {
 			printf("Timeout\n");
 			m_running = false;
 			break;
