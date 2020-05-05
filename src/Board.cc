@@ -134,33 +134,27 @@ void Board::exchange_to_move(){
 }
 
 bool Board::is_gameover() const {
+	std::vector<int> empty_vertex;
 	int empty = 0;
 	for (auto y = 0 ; y < m_boardsize ; ++y){
 		for (auto x = 0; x < m_boardsize ; ++x){
 			const int vtx = get_vertex(x, y);
 			if (m_state[vtx] == EMPTY) {
-				empty++;
+				empty_vertex.emplace_back(vtx);
 			}
 		}
 	}
 
-	if (empty == 0) {
+	if (empty_vertex.empty()) {
 		return true;
 	}
-	if (empty >= 10) {
-		return false;
-	}
-	
-	for (auto y = 0 ; y < m_boardsize ; ++y){
-		for (auto x = 0; x < m_boardsize ; ++x){
-			const int vtx = get_vertex(x, y);
-			if (m_state[vtx] == EMPTY) {
-				if (is_legal(BLACK, vtx) || is_legal(WHITE, vtx)) {
-					return false;
-				}
-			}
+
+	for (auto & vtx: empty_vertex) {
+		if (is_legal(BLACK, vtx) || is_legal(WHITE, vtx)) {
+			return false;
 		}
 	}
+
 	return true;
 }
 

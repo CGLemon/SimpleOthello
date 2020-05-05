@@ -194,9 +194,24 @@ void Text::text(std::string & input, GameState & state, bool quite){
 			return;
 		}	
 		search -> set_basicdepth(search_deep);
-	} else if (cmd == "printpgn") {
+	} else if (cmd == "printthor") {
 		if(!quite){
-			printf("%s\n",Parser::simple_pgn(state).c_str());
+			printf("%s\n",Parser::simple_thor(state).c_str());
+		}
+	} else if (cmd == "loadthor") {
+		auto filename = std::string{};
+		if (txt_input >> filename) {
+			if (!Parser::load_thor(state, filename) && !quite) {
+				printf("Loading file is fail! \n");
+			}
+		}
+
+	} else if (cmd == "savethor") {
+		auto filename = std::string{};
+		if (txt_input >> filename) {
+			if (!Parser::save_thor(state, filename) && !quite) {
+				printf("Saving file is fail! \n");
+			}
 		}
 	} else {
 		if(!quite){

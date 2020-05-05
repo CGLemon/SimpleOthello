@@ -48,13 +48,11 @@ bool GameState::play_move(const int color, const int vtx){
 		return false;
 	}
 
-	if (vtx == Board::PASS) {
-		if (board.exsit_moves(color)) {
-			return false;
-		}
+	if (vtx == Board::PASS && board.exsit_moves(color)) {
+		return false;
 	}
 
-	if(!board.is_legal(color, vtx)){
+	if(vtx != Board::PASS && !board.is_legal(color, vtx)) {
 		return false;
 	}
 	
