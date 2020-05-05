@@ -203,7 +203,7 @@ bool Board::exsit_moves(const int color) const{
 void Board::reseve(const int color, const int vtx){
 
 	const int opp_color = !color;
-	std::vector<int> update_vtx;
+	std::vector<int> update_vtx;;
 
 	for(auto k = 0; k < 8; ++k){
 		int avtx = vtx;
@@ -388,4 +388,8 @@ int Board::get_numlegalmove(const int color) const {
 		}
 	}
 	return num;
+}
+
+std::pair<int ,int> Board::get_stones() const {
+	return {m_black_stones, m_white_stones};
 }

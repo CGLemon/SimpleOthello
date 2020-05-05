@@ -21,9 +21,12 @@ public:
 	
 	void one_resign(const int resign_color);
 	void force_countine();
-	
+	int get_movenum() const;
 
+	
+	std::shared_ptr<const Board> get_board(const int v); 
 	Board board;
+
 private:
 	std::vector<std::shared_ptr<const Board>> game_history;
 	int m_movenum;

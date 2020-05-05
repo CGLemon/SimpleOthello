@@ -3,6 +3,7 @@
 #include "GameState.h"
 #include "Search.h"
 #include "Board.h"
+#include "Parser.h"
 #include "config.h"
 
 #include <string>
@@ -193,7 +194,11 @@ void Text::text(std::string & input, GameState & state, bool quite){
 			return;
 		}	
 		search -> set_basicdepth(search_deep);
-	} else  {
+	} else if (cmd == "printpgn") {
+		if(!quite){
+			printf("%s\n",Parser::simple_pgn(state).c_str());
+		}
+	} else {
 		if(!quite){
 			printf("Unknown command! \n");		
 		}

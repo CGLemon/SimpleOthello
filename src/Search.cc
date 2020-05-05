@@ -112,13 +112,12 @@ int Search::think() {
 	
 	
 	while (m_running) {
-
 		if (m_TimeController.stop_search()) {
 			printf("Timeout\n");
 			m_running = false;
 			break;
 		}
-
+		
 		printf("Searching to depth : %d.... ", maxdepth);
 		auto deeper_board = std::make_shared<Board>(root_state.board);
 		auto node = root_node -> get_node();
@@ -215,8 +214,16 @@ void Search::set_basicdepth(const int basicdepth) {
 }
 
 void Search::parser_vertex(const int vtx, bool quiet) const {
+
 	if (vtx == Board::NOVERTEX) {
-		printf("PASS");
+		printf("erro");
+		return;
+	}
+
+	if (vtx == Board::PASS) {
+		if (!quiet) {
+			printf("PASS");
+		}
 		return;
 	}
 

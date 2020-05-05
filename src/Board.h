@@ -67,6 +67,8 @@ public:
 	int get_boardsize() const;
 	int get_numlegalmove(const int color) const;
 
+	std::pair<int ,int> get_stones() const;
+
 private :
 	int m_quiet;
 	int m_tomove;

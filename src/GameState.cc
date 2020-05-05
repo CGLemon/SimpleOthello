@@ -51,10 +51,6 @@ bool GameState::play_move(const int color, const int vtx){
 	if (vtx == Board::PASS) {
 		if (board.exsit_moves(color)) {
 			return false;
-		} else {
-			board.set_to_move(color);
-			game_history.emplace_back(std::make_shared<Board>(board));
-			return true;
 		}
 	}
 
@@ -178,3 +174,14 @@ void GameState::force_countine() {
 	m_gameover = false;
 }
 
+int GameState::get_movenum() const {
+	return m_movenum;
+}
+
+std::shared_ptr<const Board> GameState::get_board(const int v) {
+	if (v < 0 || v > m_movenum) {
+		return nullptr;
+	}
+
+	return game_history[v];
+}
