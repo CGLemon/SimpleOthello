@@ -4,6 +4,7 @@
 #include <vector>
 #include <memory>
 
+#include "Utils.h"
 #include "Board.h"
 #include "GameState.h"
 #include "Node.h"
@@ -25,9 +26,9 @@ public:
 
 	int get_best_move();
 
-	void print_move_eval(bool quiet) const;
-	void print_node_count(bool quiet) const;
-	void parser_vertex(const int vtx, bool quiet) const;
+	void print_move_eval() const;
+	void print_node_count() const;
+	void parser_vertex(const int vtx) const;
 
 	void set_time(int seconds);
 	void set_maxdepth(int maxdepth);

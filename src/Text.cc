@@ -5,6 +5,7 @@
 #include "Board.h"
 #include "Parser.h"
 #include "config.h"
+#include "cfg.h"
 
 #include <string>
 #include <sstream>
@@ -27,6 +28,7 @@ std::vector<std::string> Text::first_cmd =
 
 void Text::init_all() {
 	Zobrist::init_zobrist();
+	init_cfg();
 }
 
 
@@ -125,7 +127,7 @@ void Text::text(std::string & input, GameState & state, bool quite){
 			printf("disable undo!\n");
 		}
 	} else if (cmd == "clear" || cmd == "reset") {
-		state.init_game(BOARDSIZE);
+		state.init_game(BOARD_SIZE);
 		search -> clear();
 	} else if (cmd == "settime") {
 

@@ -8,13 +8,13 @@
 #include <cstdint>
 #include <cassert>
 
-CacheTable Evaluation::m_cache;
+CacheTable<Evaluation::Eval> Evaluation::m_cache;
 
 constexpr int Evaluation::winner_value;
 constexpr int Evaluation::loser_value;
 constexpr int Evaluation::draw_value;
 
-const std::array<int, INTERSECTION> Evaluation::m_evaltable = {
+const std::array<int, NUM_INTERSECTIONS> Evaluation::m_evaltable = {
 	120, -20,   20,  5,     5,  20, -20, 120,
 	-20, -40,  -5,  -5,    -5,  -5, -40, -20,
 	 20,  -5,  15,   4,     4,  15,  -5,  20,
@@ -28,7 +28,7 @@ const std::array<int, INTERSECTION> Evaluation::m_evaltable = {
 
 
 /*
-const std::array<int, INTERSECTION> Evaluation::m_evaltable = {
+const std::array<int, NUM_INTERSECTIONS> Evaluation::m_evaltable = {
 	120, -20,  20,    20, -20, 120,
 	-20, -40,   5,     5, -40, -20,
 	 20,   5,   0,     0,   5,  20,
@@ -42,11 +42,11 @@ constexpr int Evaluation::onelegalvale;
 
 
 void Evaluation::get_tablescore(const Board & board, Evaluation::Eval & eval,
-									const std::array<int, INTERSECTION> & table) {
+									const std::array<int, NUM_INTERSECTIONS> & table) {
 
 	eval.blackscore = 0;
 	eval.whitescore = 0;
-	int boardsize = board.get_boardsize();
+	const int boardsize = board.get_boardsize();
 	const int color = board.get_to_move(); 
 	assert(board.get_boardsize() == 8);
 

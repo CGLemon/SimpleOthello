@@ -7,7 +7,7 @@
 #include <sstream>
 
 GameState::GameState(){
-	init_game(BOARDSIZE);
+	init_game(BOARD_SIZE);
 }
 
 
@@ -180,6 +180,5 @@ std::shared_ptr<const Board> GameState::get_board(const int v) {
 	if (v < 0 || v > m_movenum) {
 		return nullptr;
 	}
-
 	return game_history[v];
 }

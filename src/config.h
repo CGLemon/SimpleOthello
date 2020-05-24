@@ -2,11 +2,11 @@
 #define CONFIG_H_INCLUDE
 
 
-static constexpr int BOARDSIZE = 8;
-static constexpr int INTERSECTION = BOARDSIZE * BOARDSIZE;
-static constexpr int EBOARDSIZE = BOARDSIZE + 2;
-static constexpr int NUMVERTICS = EBOARDSIZE * EBOARDSIZE;
+static constexpr int BOARD_SIZE = 8;
+static constexpr int NUM_INTERSECTIONS = BOARD_SIZE * BOARD_SIZE;
+static constexpr int EBOARDSIZE = BOARD_SIZE + 2;
+static constexpr int NUM_VERTICES = EBOARDSIZE * EBOARDSIZE;
 
-static_assert(BOARDSIZE%2 ==0 ,"");
+static_assert(BOARD_SIZE%2 ==0 ,"");
 
 #endif

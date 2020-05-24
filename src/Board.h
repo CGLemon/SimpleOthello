@@ -21,7 +21,7 @@ public:
 	static constexpr int NUM_SYMMETRIES = 8;
 	static constexpr int IDENTITY_SYMMETRY = 0;
 	static std::array<int,8> m_dirs;
-	static std::array<std::array<int ,INTERSECTION>, NUM_SYMMETRIES> m_symmetry_idx_table;
+	static std::array<std::array<int ,NUM_INTERSECTIONS>, NUM_SYMMETRIES> m_symmetry_idx_table;
 
 	int get_vertex(const int x, const int y) const;
 	int get_index(const int x, const int y) const;
@@ -75,13 +75,13 @@ private :
 	int m_lastmove;	
 	std::uint64_t m_hash;
 
-	std::array<vertex_t ,NUMVERTICS> m_state;
-	//std::array<bool ,NUMVERTICS> m_stable;
+	std::array<vertex_t ,NUM_VERTICES> m_state;
+	//std::array<bool ,NUM_VERTICES> m_stable;
 
 	int m_boardsize;
-	int m_numvertics;
+	int m_numvertices;
 	int m_eboardsize;
-	int m_intersection;
+	int m_intersections;
 
 	int m_black_stones;
 	int m_white_stones;
@@ -109,7 +109,7 @@ inline int Board::get_index(const int x, const int y) const {
 }
 
 inline int Board::idx_to_vtx(const int idx) const {
-	assert(idx >= 0 && idx < m_intersection);
+	assert(idx >= 0 && idx < m_intersections);
 	const int x = idx % m_boardsize;
 	const int y = idx / m_boardsize;
 	return get_vertex(x, y);

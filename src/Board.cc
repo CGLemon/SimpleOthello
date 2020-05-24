@@ -1,6 +1,7 @@
 #include "Board.h"
 #include "Zobrist.h"
 #include "config.h"
+#include "Utils.h"
 
 #include <cassert>
 #include <iostream>
@@ -12,7 +13,7 @@ constexpr int Board::NUM_SYMMETRIES;
 constexpr int Board::IDENTITY_SYMMETRY;
 constexpr int Board::PASS;
 constexpr int Board::NOVERTEX;
-std::array<std::array<int ,INTERSECTION>, Board::NUM_SYMMETRIES> Board::m_symmetry_idx_table;
+std::array<std::array<int ,NUM_INTERSECTIONS>, Board::NUM_SYMMETRIES> Board::m_symmetry_idx_table;
 
 std::pair<int, int> Board::get_symmetry(const int x, const int y,
 										const int symmetry) {
@@ -45,15 +46,15 @@ std::pair<int, int> Board::get_symmetry(const int x, const int y,
 
 
 void Board::reset_board(int boardsize){
-	if (boardsize >  BOARDSIZE) {
-		boardsize = BOARDSIZE;
+	if (boardsize >  BOARD_SIZE) {
+		boardsize = BOARD_SIZE;
 	} else if (boardsize <= 0){
-		boardsize = BOARDSIZE;
+		boardsize = BOARD_SIZE;
 	}
 	m_boardsize  = boardsize;
 	m_eboardsize = boardsize+1; 	
-	m_numvertics = m_eboardsize *m_eboardsize;
-	m_intersection = m_boardsize * m_boardsize;
+	m_numvertices = m_eboardsize *m_eboardsize;
+	m_intersections = m_boardsize * m_boardsize;
 	m_tomove = BLACK;
 	m_lastmove = NOVERTEX;	
 	m_black_stones = 0;
@@ -66,7 +67,7 @@ void Board::reset_board(int boardsize){
 	m_dirs[3] =  m_eboardsize	;m_dirs[7] = -m_eboardsize+1;
 
 
-	for (auto i = 0 ; i < NUMVERTICS ; ++i){
+	for (auto i = 0 ; i < NUM_VERTICES ; ++i){
 		m_state[i] 	= INVAL;
 	}
 
@@ -97,7 +98,7 @@ void Board::fix_board(){
 
 void Board::init_symmetry() {
 	for (int sym = 0; sym < NUM_SYMMETRIES; ++sym) {
-		for (int idx = 0; idx < m_intersection; ++idx) {
+		for (int idx = 0; idx < m_intersections; ++idx) {
 			const int x = idx % m_boardsize;
 			const int y = idx / m_boardsize;
 			const auto sym_idx = get_symmetry(x, y, sym);
@@ -135,7 +136,6 @@ void Board::exchange_to_move(){
 
 bool Board::is_gameover() const {
 	std::vector<int> empty_vertex;
-	int empty = 0;
 	for (auto y = 0 ; y < m_boardsize ; ++y){
 		for (auto x = 0; x < m_boardsize ; ++x){
 			const int vtx = get_vertex(x, y);
@@ -183,7 +183,7 @@ bool Board::is_legal(const int color, const int vtx) const{
 }
 
 bool Board::exsit_moves(const int color) const{
-	for(auto vtx = 0 ; vtx < NUMVERTICS; ++vtx){
+	for(auto vtx = 0 ; vtx < m_numvertices; ++vtx){
 		if(m_state[vtx] == EMPTY){
 			if (is_legal(color, vtx)) {
 				return true;
@@ -227,7 +227,7 @@ void Board::play_move(const int color, const int vtx){
 	
 	if (vtx != Board::PASS) {
 		if (m_state[vtx] != EMPTY) {
-			printf("vtx : %d \n", vtx);
+			Utils::myprintf("vtx : %d \n", vtx);
 		}
 		assert(m_state[vtx] == EMPTY);
 		update_state(color, vtx);
@@ -241,7 +241,7 @@ void Board::play_move(const int color, const int vtx){
 void Board::area_count() {
 	int black_area = 0;
 	int white_area = 0;
-	for (auto i = 0 ; i < NUMVERTICS ; ++i){
+	for (auto i = 0 ; i < m_numvertices ; ++i){
 		if(m_state[i] == BLACK){	
 			black_area++;
 		}else if(m_state[i] == WHITE){
@@ -254,79 +254,79 @@ void Board::area_count() {
 
 
 void Board::print_type(Board::vertex_t vtx_t) const{
-	vtx_t == BLACK ? printf("X") : 
-	vtx_t == WHITE ? printf("O") :
-	vtx_t == EMPTY ? printf(" ") : printf("error");
+	vtx_t == BLACK ? Utils::myprintf("X") : 
+	vtx_t == WHITE ? Utils::myprintf("O") :
+	vtx_t == EMPTY ? Utils::myprintf(" ") : Utils::myprintf("error");
 }
 
 void Board::print_row(const int count) const {
 	assert(count >= 1);
 	for (int x = 0; x < count; ++x) {
 		if (x == 0) {
-			printf("+");
+			Utils::myprintf("+");
 		}
-		printf("---+");
+		Utils::myprintf("---+");
 	}
-	printf("\n");
+	Utils::myprintf("\n");
 }
 
 void Board::text_display(const int mark) const{
 	if (!m_quiet) {
-		printf("   ");
-		for (char c = 65; c < 65 + m_boardsize; ++c) {printf("  %c ", c);}
-		printf("\n");
-		for (auto y = 0 ; y < BOARDSIZE ; ++y){
-			printf("   ");
+		Utils::myprintf("   ");
+		for (char c = 65; c < 65 + m_boardsize; ++c) {Utils::myprintf("  %c ", c);}
+		Utils::myprintf("\n");
+		for (auto y = 0 ; y < m_boardsize ; ++y){
+			Utils::myprintf("   ");
 			print_row(m_boardsize);
 			if (y+1 < 10) {
-				printf(" %d ",y+1);
+				Utils::myprintf(" %d ",y+1);
 			} else {
-				printf("%d ",y+1);
+				Utils::myprintf("%d ",y+1);
 			}
-			printf("|");
-			for(auto x = 0; x < BOARDSIZE ; ++x){
+			Utils::myprintf("|");
+			for(auto x = 0; x < m_boardsize ; ++x){
 				const int vertex = get_vertex(x,y);
-				mark == vertex ? printf("(") : printf(" ");
+				mark == vertex ? Utils::myprintf("(") : Utils::myprintf(" ");
 				if(is_legal(m_tomove, vertex)){
-					printf(".");
+					Utils::myprintf(".");
 				}else{
 					print_type(m_state[vertex]);
 				}
-				mark == vertex ? printf(")") : printf(" ");
-				printf("|");
+				mark == vertex ? Utils::myprintf(")") : Utils::myprintf(" ");
+				Utils::myprintf("|");
 			}
-			printf("%d",y+1);
-			printf("\n");
+			Utils::myprintf("%d",y+1);
+			Utils::myprintf("\n");
 		}
-		printf("   ");
+		Utils::myprintf("   ");
 		print_row(m_boardsize);
-		printf("   ");
-		for (char c = 65; c < 65 + m_boardsize; ++c) {printf("  %c ", c);}
-		printf("\n");
-		printf("\n");
+		Utils::myprintf("   ");
+		for (char c = 65; c < 65 + m_boardsize; ++c) {Utils::myprintf("  %c ", c);}
+		Utils::myprintf("\n");
+		Utils::myprintf("\n");
 	}
 }
 void Board::print_to_move() const {
-	m_tomove == BLACK ? printf("black move \n") :
-	m_tomove == WHITE ? printf("white move \n") : printf("error \n");
+	m_tomove == BLACK ? Utils::myprintf("black move \n") :
+	m_tomove == WHITE ? Utils::myprintf("white move \n") : Utils::myprintf("error \n");
 }
 
 void Board::print_hash() const{
-	printf("HASH 	     	: %lx \n", m_hash);
-	//printf("FILE C  HASH 	: %lx \n", calc_hash(4));
-	//printf("FILE XY HASH 	: %lx \n", calc_hash(3));
-	//printf("FILE C XY HASH 	: %lx \n", calc_hash(7));
+	Utils::myprintf("HASH 	     	: %lx \n", m_hash);
+	//Utils::myprintf("FILE C  HASH 	: %lx \n", calc_hash(4));
+	//Utils::myprintf("FILE XY HASH 	: %lx \n", calc_hash(3));
+	//Utils::myprintf("FILE C XY HASH 	: %lx \n", calc_hash(7));
 }
 
 void Board::print_stones() const {
-	printf("black stones : %d | white stones : %d\n", m_black_stones, m_white_stones);
+	Utils::myprintf("black stones : %d | white stones : %d\n", m_black_stones, m_white_stones);
 }
 
 std::uint64_t Board::calc_hash(const int symmetry) const {
 
 	std::uint64_t res = Zobrist::zobrist_empty;
-	for (auto y = 0 ; y < BOARDSIZE ; ++y){
-		for (auto x = 0; x < BOARDSIZE ; ++x){
+	for (auto y = 0 ; y < m_boardsize ; ++y){
+		for (auto x = 0; x < m_boardsize ; ++x){
 			const int vtx = get_vertex(x, y);
 			const int idx = get_index(x, y);
 			const int sym_idx = m_symmetry_idx_table[symmetry][idx];

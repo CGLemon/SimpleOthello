@@ -7,13 +7,34 @@
 #include <mutex>
 #include <unordered_map>
 
+#include "config.h"
+
+
+struct TAResult {
+	TAResult() : blackscore(0), whitescore(0) {}
+	int blackscore;
+	int whitescore;
+};
+
+/*
+struct NNResult {
+	NNResult() : policy_pass(0.0f) {
+        policy.fill(0.0f);
+		occupied.fill(0.0f);
+		winrate.fill(0.0f);
+    }
+
+	std::array<float, NUM_INTERSECTIONS> policy;
+	std::array<float, NUM_INTERSECTIONS> occupied;
+	std::array<float,NUM_VALUELABLE> winrate;
+    float policy_pass;
+};
+*/
+
+template <typename EvalResult>
 class CacheTable {
 public:
-	struct EvalResult {
-		EvalResult() : blackscore(0), whitescore(0) {}
-		int blackscore;
-		int whitescore;
-	};
+	
 
 	CacheTable(size_t size = MAX_CACHE_COUNT) : m_hits(0), m_lookups(0), m_inserts(0) { resize(size); }
 
@@ -61,5 +82,54 @@ private:
 	
 };
 
+template <typename EvalResult>
+bool CacheTable<EvalResult>::lookup(std::uint64_t hash, EvalResult & result) {
 
+	std::lock_guard<std::mutex> lock(m_mutex);
+    ++m_lookups;
+
+    auto iter = m_cache.find(hash);
+    if (iter == m_cache.end()) {
+        return false;
+	}
+    const auto& entry = iter->second;
+
+
+    ++m_hits;
+    result = entry->result;
+    return true;
+}
+
+template <typename EvalResult>
+void CacheTable<EvalResult>::insert(std::uint64_t hash, const EvalResult & result) {
+
+    std::lock_guard<std::mutex> lock(m_mutex);
+
+    if (m_cache.find(hash) != m_cache.end()) {
+        return;  
+    }
+
+    m_cache.emplace(hash, std::make_unique<Entry>(result));
+    m_order.push_back(hash);
+    ++m_inserts;
+
+    if (m_order.size() > m_size) {
+        m_cache.erase(m_order.front());
+        m_order.pop_front();
+    }
+}
+
+template <typename EvalResult>
+void CacheTable<EvalResult>::resize(size_t size) {
+
+	m_size = ( 
+			size > CacheTable::MAX_CACHE_COUNT ? CacheTable::MAX_CACHE_COUNT :
+			size < CacheTable::MIN_CACHE_COUNT ? CacheTable::MIN_CACHE_COUNT : size
+	 );
+
+    while (m_order.size() > m_size) {
+        m_cache.erase(m_order.front());
+        m_order.pop_front();
+    }
+}
 #endif
